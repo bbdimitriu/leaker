@@ -9,28 +9,25 @@ import org.aspectj.lang.annotation.{Aspect, Before, Pointcut}
 @Aspect
 class LeakerAspect {
 
-  @Pointcut("within(org.leaker..*) || within(scala..*)")
-  def getSelfPointcut {
+  @Pointcut("within(org.leaker..*) || within(scala..*) || within(java..*)")
+  def getExceptionsPointcut {
   }
 
   @Pointcut("call(* *..*(..))")
   def getAllMethodsPointcut {
   }
 
-  @Pointcut("!getSelfPointcut() && getAllMethodsPointcut()")
+  @Pointcut("!getExceptionsPointcut() && getAllMethodsPointcut()")
   def getPrunedPointcut {
   }
 
   @Before("getPrunedPointcut()")
-  def ourAfterAdvice(joinPoint: JoinPoint) {
-    val signature: String = joinPoint.getSignature.toString
-    if (InstrumentationManager.isMethodEnabledForInstrumentation(signature)) {
-      dealWithArguments(signature, joinPoint.getArgs)
+  def ourBeforeAdvice(joinPoint: JoinPoint) {
+    if (MethodInstrumentationManager.globalEnabled) {
+      val signature: String = joinPoint.getSignature.toLongString
+      // pushes the event into the Observable to notify the Observers
+      MethodInstrumentationManager.getObservableForMethod(signature).foreach(_.onNext(joinPoint.getArgs))
     }
   }
 
-  private def dealWithArguments(signature: String, args: Array[AnyRef]) {
-    val representation = InstrumentationManager.getTransformerForSignature(signature)(args)
-    println(s"$signature: [$representation]")
-  }
 }
