@@ -6,7 +6,7 @@ import org.scalatest.{Ignore, FunSuite}
  * Created by bogdan on 23/07/2014.
  */
 @Ignore
-class MethodInstrumentationDeailsTest extends FunSuite {
+class MethodInstrumentationDetailsTest extends FunSuite {
 
   test("creating successful MethodInstrumentationDetails from XML") {
     val sample = MethodInstrumentationDetails.createInstanceFromXML(
@@ -14,8 +14,7 @@ class MethodInstrumentationDeailsTest extends FunSuite {
         |<instrumentation>
         | <methodSignature>
         | <![CDATA[
-        | private static void org.test.InterruptTest.myMethod(int, int,
-        | java.lang.String)
+        | private static void org.test.InterruptTest.myMethod(int, int, java.lang.String)
         | ]]>
         | </methodSignature>
         | <filter>
@@ -25,7 +24,7 @@ class MethodInstrumentationDeailsTest extends FunSuite {
         | </filter>
         | <transformer>
         | <![CDATA[
-        | "Action print: " + args[0] + " " + (((Integer)args[1]).intValue() % 2)
+        | "Action print: **** " + args[0] + " " + (((Integer)args[1]).intValue() % 5)
         | ]]>
         | </transformer>
         | <action>

@@ -10,18 +10,18 @@ import org.aspectj.lang.annotation.{Aspect, Before, Pointcut}
 class LeakerAspect {
 
   @Pointcut("within(org.leaker..*) || within(scala..*) || within(java..*)")
-  def getExceptionsPointcut {
+  def exceptionsPointcut() {
   }
 
   @Pointcut("call(* *..*(..))")
-  def getAllMethodsPointcut {
+  def allMethodsPointcut() {
   }
 
-  @Pointcut("!getExceptionsPointcut() && getAllMethodsPointcut()")
-  def getPrunedPointcut {
+  @Pointcut("!exceptionsPointcut() && allMethodsPointcut()")
+  def prunedPointcut() {
   }
 
-  @Before("getPrunedPointcut()")
+  @Before("prunedPointcut()")
   def ourBeforeAdvice(joinPoint: JoinPoint) {
     if (MethodInstrumentationManager.globalEnabled) {
       val signature: String = joinPoint.getSignature.toLongString

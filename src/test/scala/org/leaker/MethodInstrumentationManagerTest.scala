@@ -9,9 +9,9 @@ import org.scalatest.{Ignore, FunSuite}
 class MethodInstrumentationManagerTest extends FunSuite {
 
   test("Check that we receive events") {
-    val method: String = "mytestMethod"
     var i = 0
     val methodInstrumentationDetails = new MethodInstrumentationDetails(
+      methodSignature = "mytestMethod",
       filterOption = Some((args: Array[AnyRef]) => args(0).asInstanceOf[java.lang.Integer] > 20),
       transformerOption = Some((args: Array[AnyRef]) =>
         (args(0).asInstanceOf[java.lang.Integer] * 1000).asInstanceOf[java.lang.Integer]),
@@ -20,8 +20,9 @@ class MethodInstrumentationManagerTest extends FunSuite {
         println(s"Final value: $obj")
       }),
       "fill_with_XML")
-    MethodInstrumentationManager.createNewObservableForMethod(method, methodInstrumentationDetails)
-    val subjectOption = MethodInstrumentationManager.getObservableForMethod(method).get
+    MethodInstrumentationManager.createNewObservableForMethod(methodInstrumentationDetails)
+    val subjectOption = MethodInstrumentationManager.getObservableForMethod(methodInstrumentationDetails
+      .methodSignature).get
     subjectOption.onNext(Array(Integer.valueOf(30)))
     assert(i == 1, "Expected that the value was incremented")
 

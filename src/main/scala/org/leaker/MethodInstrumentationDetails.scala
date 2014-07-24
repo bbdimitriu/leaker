@@ -5,7 +5,8 @@ import scala.xml.{Elem, XML}
 /**
  * Created by bogdan on 17/07/2014.
  */
-class MethodInstrumentationDetails(val filterOption: Option[MethodCallFilter],
+class MethodInstrumentationDetails(val methodSignature: String,
+                                   val filterOption: Option[MethodCallFilter],
                                    val transformerOption: Option[Transformer],
                                    val action: Option[InstrumentAction],
                                    val instrumentationDetailsAsXML: String)
@@ -24,6 +25,6 @@ object MethodInstrumentationDetails {
     val filter = createFilterFunction(filterString)
     val transformer = createTransformerFunction(transformerString)
     val action = createActionFunction(actionString)
-    new MethodInstrumentationDetails(filter, transformer, action, instrumentationXml)
+    new MethodInstrumentationDetails(methodSignature, filter, transformer, action, instrumentationXml)
   }
 }

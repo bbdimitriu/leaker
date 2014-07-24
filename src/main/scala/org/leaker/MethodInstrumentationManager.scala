@@ -1,6 +1,7 @@
 package org.leaker
 
-import rx.lang.scala.{Observable, Subject}
+import org.leaker.jmx.JMXManager
+import rx.lang.scala.Subject
 
 /**
  * Created by bogdan on 14/07/2014.
@@ -13,21 +14,23 @@ object MethodInstrumentationManager {
     new java.util.concurrent.ConcurrentHashMap[String, MethodInstrumentationDetails]
   @volatile var globalEnabled: Boolean = true
 
+  JMXManager.initialiseMBeans()
+
   // TODO remove this section later - initialisation with a demo instrumentation
-//  val sample = new MethodInstrumentationDetails(
-//    filterOption = None,//Some(args => args(0).asInstanceOf[java.lang.Integer] > 2),
-//    transformerOption =
-//      Some(args => (args(0).asInstanceOf[java.lang.Integer] + args(1).asInstanceOf[java.lang.Integer]).toString),
-//    action = Some(arg => println(arg)),
-//    instrumentationDetailsAsXML = "XML goes here"
-//  )
+  //  val sample = new MethodInstrumentationDetails(
+  //    filterOption = None,//Some(args => args(0).asInstanceOf[java.lang.Integer] > 2),
+  //    transformerOption =
+  //      Some(args => (args(0).asInstanceOf[java.lang.Integer] + args(1).asInstanceOf[java.lang.Integer]).toString),
+  //    action = Some(arg => println(arg)),
+  //    instrumentationDetailsAsXML = "XML goes here"
+  //  )
+  /*
   val sample = MethodInstrumentationDetails.createInstanceFromXML(
     """
       |<instrumentation>
       | <methodSignature>
       | <![CDATA[
-      | private static void org.test.InterruptTest.myMethod(int, int,
-      | java.lang.String)
+      | private static void org.test.InterruptTest.myMethod(int, int, java.lang.String)
       | ]]>
       | </methodSignature>
       | <filter>
@@ -47,11 +50,11 @@ object MethodInstrumentationManager {
       | </action>
       |</instrumentation>
     """.stripMargin)
-  createNewObservableForMethod(
-    "private static void org.test.InterruptTest.myMethod(int, int, java.lang.String)", sample)
+  createNewObservableForMethod(sample)
+  */
   // TODO end of section to be removed
 
-  def createNewObservableForMethod(method: String, methodInstrumentationDetails: MethodInstrumentationDetails) = {
+  def createNewObservableForMethod(methodInstrumentationDetails: MethodInstrumentationDetails) = {
     val subject: Subject[Array[AnyRef]] = Subject[Array[AnyRef]]()
     val filtered =
       if (methodInstrumentationDetails.filterOption.isDefined)
@@ -70,15 +73,23 @@ object MethodInstrumentationManager {
       // TODO print warning, no action is taken, useless case
     }
     synchronized {
-      methodObservables.putIfAbsent(method, subject)
-      methodInstrumentationDetailsMap.putIfAbsent(method, methodInstrumentationDetails)
+      methodObservables.putIfAbsent(methodInstrumentationDetails.methodSignature, subject)
+      methodInstrumentationDetailsMap.putIfAbsent(methodInstrumentationDetails.methodSignature,
+        methodInstrumentationDetails)
     }
   }
 
   def getObservableForMethod(method: String): Option[Subject[Array[AnyRef]]] =
     Option(methodObservables.get(method))
 
-  def clearAllInstrumentationRules {
+  def removeInstrumentationForMethod(method: String) {
+    synchronized {
+      methodObservables.remove(method)
+      methodInstrumentationDetailsMap.remove(method)
+    }
+  }
+
+  def clearAllInstrumentationRules() {
     synchronized {
       methodObservables.clear()
       methodInstrumentationDetailsMap.clear()
