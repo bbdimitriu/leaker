@@ -4,7 +4,7 @@ version := "1.0.0"
 
 javacOptions += "-g"
 
-scalaVersion := "2.11.1"
+scalaVersion := "2.11.2"
 
 scalacOptions += "-unchecked"
 

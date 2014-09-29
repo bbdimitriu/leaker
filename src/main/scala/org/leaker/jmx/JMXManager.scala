@@ -9,9 +9,9 @@ import javax.management.ObjectName
 object JMXManager {
 
   def initialiseMBeans() {
-    val mbeanServer = ManagementFactory.getPlatformMBeanServer();
+    val mbeanServer = ManagementFactory.getPlatformMBeanServer
 
-    val instrumentationManagerObject = new ObjectName("com.leaker:type=MethodInstrumentationManager");
-    mbeanServer.registerMBean(new InstrumentationManager(), instrumentationManagerObject);
+    val instrumentationManagerObject = new ObjectName("org.leaker:type=MethodInstrumentationManager")
+    mbeanServer.registerMBean(new InstrumentationManager(), instrumentationManagerObject)
   }
 }

@@ -16,44 +16,6 @@ object MethodInstrumentationManager {
 
   JMXManager.initialiseMBeans()
 
-  // TODO remove this section later - initialisation with a demo instrumentation
-  //  val sample = new MethodInstrumentationDetails(
-  //    filterOption = None,//Some(args => args(0).asInstanceOf[java.lang.Integer] > 2),
-  //    transformerOption =
-  //      Some(args => (args(0).asInstanceOf[java.lang.Integer] + args(1).asInstanceOf[java.lang.Integer]).toString),
-  //    action = Some(arg => println(arg)),
-  //    instrumentationDetailsAsXML = "XML goes here"
-  //  )
-  /*
-  val sample = MethodInstrumentationDetails.createInstanceFromXML(
-    """
-      |<instrumentation>
-      | <methodSignature>
-      | <![CDATA[
-      | private static void org.test.InterruptTest.myMethod(int, int, java.lang.String)
-      | ]]>
-      | </methodSignature>
-      | <filter>
-      | <![CDATA[
-      | ((Integer)args[0]).intValue() > 50
-      | ]]>
-      | </filter>
-      | <transformer>
-      | <![CDATA[
-      | "Action print: " + args[0] + " " + (((Integer)args[1]).intValue() % 2)
-      | ]]>
-      | </transformer>
-      | <action>
-      | <![CDATA[
-      | System.out.println(arg)
-      | ]]>
-      | </action>
-      |</instrumentation>
-    """.stripMargin)
-  createNewObservableForMethod(sample)
-  */
-  // TODO end of section to be removed
-
   def createNewObservableForMethod(methodInstrumentationDetails: MethodInstrumentationDetails) = {
     val subject: Subject[Array[AnyRef]] = Subject[Array[AnyRef]]()
     val filtered =
