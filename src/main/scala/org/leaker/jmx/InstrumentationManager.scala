@@ -1,23 +1,35 @@
 package org.leaker.jmx
 
-import org.leaker.{MethodInstrumentationManager, MethodInstrumentationDetails}
+import java.lang.instrument.Instrumentation
 
-/**
- * Created by bogdan on 24/07/2014.
- */
-class InstrumentationManager extends InstrumentationManagerMBean {
+import org.leaker.{LeakerClassTransformer, MethodInstrumentationManager}
+
+class InstrumentationManager(instrumentation: Instrumentation) extends InstrumentationManagerMBean {
 
   override def makeInstrumentationForXML(xmlInstrumentationDefinition: String) {
-    val definition = MethodInstrumentationDetails.createInstanceFromXML(xmlInstrumentationDefinition)
-    MethodInstrumentationManager.createNewObservableForMethod(definition)
+    MethodInstrumentationManager.makeInstrumentationForXML(xmlInstrumentationDefinition)
+    val targetClazz = Class.forName("MyClass")
+    val targetClassLoader = targetClazz.getClassLoader
+
+    val transformer: LeakerClassTransformer = new LeakerClassTransformer("MyClass", targetClassLoader)
+    instrumentation.addTransformer(transformer, true)
+    try {
+      instrumentation.retransformClasses(targetClazz)
+    } catch {
+      case ex: Exception =>
+        ex.printStackTrace()
+        throw new RuntimeException("Failed to transform [" + targetClazz.getName + "]", ex)
+    } finally {
+      instrumentation.removeTransformer(transformer)
+    }
   }
 
   override def disableInstrumentationGlobally() {
-    MethodInstrumentationManager.globalEnabled = false
+    // TODO
   }
 
   override def enableInstrumentationGlobally() {
-    MethodInstrumentationManager.globalEnabled = true
+    // TODO
   }
 
   override def disableInstrumentationForMethod(signature: String) {
@@ -25,6 +37,5 @@ class InstrumentationManager extends InstrumentationManagerMBean {
   }
 
   override def clearAllInstrumentationRules() {
-    MethodInstrumentationManager.clearAllInstrumentationRules()
   }
 }

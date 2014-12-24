@@ -1,22 +1,32 @@
 package org.leaker
 
-import org.leaker.jmx.JMXManager
+import org.slf4j.LoggerFactory
 import rx.lang.scala.Subject
 
-/**
- * Created by bogdan on 14/07/2014.
- */
+import scala.collection.concurrent.TrieMap
+
 object MethodInstrumentationManager {
 
-  val methodObservables =
-    new java.util.concurrent.ConcurrentHashMap[String, Subject[Array[AnyRef]]]
-  val methodInstrumentationDetailsMap =
-    new java.util.concurrent.ConcurrentHashMap[String, MethodInstrumentationDetails]
-  @volatile var globalEnabled: Boolean = true
+  val log = LoggerFactory.getLogger(MethodInstrumentationManager.getClass)
 
-  JMXManager.initialiseMBeans()
+  val methodInstrumentationMap = new TrieMap[String, MethodInstrumentation]
 
-  def createNewObservableForMethod(methodInstrumentationDetails: MethodInstrumentationDetails) = {
+  def makeInstrumentationForXML(xmlInstrumentationDefinition: String) {
+    val definition = MethodInstrumentationDetails.createInstanceFromXML(xmlInstrumentationDefinition)
+    val subject: Subject[Array[AnyRef]] = createObservable(definition)
+
+    methodInstrumentationMap.putIfAbsent(definition.methodSignature,
+      new MethodInstrumentation(definition, subject))
+  }
+
+  def getMethodInstrumentationsForClassName(className: String): Map[String, MethodInstrumentation] =
+    // FIXME make it work with different signatures for the same method name
+    methodInstrumentationMap.filter(_._1.startsWith(className)).map { entry =>
+      val signature = entry._1
+      signature.drop(signature.lastIndexOf('.') + 1).takeWhile(_ != '(') -> entry._2
+    }.toMap
+
+  private def createObservable(methodInstrumentationDetails: MethodInstrumentationDetails): Subject[Array[AnyRef]] = {
     val subject: Subject[Array[AnyRef]] = Subject[Array[AnyRef]]()
     val filtered =
       if (methodInstrumentationDetails.filterOption.isDefined)
@@ -34,34 +44,19 @@ object MethodInstrumentationManager {
     } else {
       // TODO print warning, no action is taken, useless case
     }
-    synchronized {
-      methodObservables.putIfAbsent(methodInstrumentationDetails.methodSignature, subject)
-      methodInstrumentationDetailsMap.putIfAbsent(methodInstrumentationDetails.methodSignature,
-        methodInstrumentationDetails)
-    }
+    subject
   }
 
   def getObservableForMethod(method: String): Option[Subject[Array[AnyRef]]] =
-    Option(methodObservables.get(method))
+    methodInstrumentationMap.get(method).map(_.observable)
 
   def removeInstrumentationForMethod(method: String) {
-    synchronized {
-      methodObservables.remove(method)
-      methodInstrumentationDetailsMap.remove(method)
-    }
+    methodInstrumentationMap.remove(method)
+    // TODO need to call retransform
   }
 
-  def clearAllInstrumentationRules() {
-    synchronized {
-      methodObservables.clear()
-      methodInstrumentationDetailsMap.clear()
-    }
+  def leakMethodCall(className: String, methodName: String, params: Array[AnyRef]): Unit = {
+    log.info(s"Leaked call: $className.$methodName with parameters: ${params.mkString(", ")}")
   }
-
-  def getInstrumentationDetailsForMethod(method: String): Option[String] =
-    Option(methodInstrumentationDetailsMap.get(method)).flatMap {
-      (methodInstrumentationDetails: MethodInstrumentationDetails) =>
-        Some(methodInstrumentationDetails.instrumentationDetailsAsXML)
-    }
 
 }

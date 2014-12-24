@@ -1,17 +1,15 @@
 package org.leaker.jmx
 
+import java.lang.instrument.Instrumentation
 import java.lang.management.ManagementFactory
 import javax.management.ObjectName
 
-/**
- * Created by bogdan on 24/07/2014.
- */
 object JMXManager {
 
-  def initialiseMBeans() {
+  def initialiseMBeans(instrumentation: Instrumentation) {
     val mbeanServer = ManagementFactory.getPlatformMBeanServer
 
     val instrumentationManagerObject = new ObjectName("org.leaker:type=MethodInstrumentationManager")
-    mbeanServer.registerMBean(new InstrumentationManager(), instrumentationManagerObject)
+    mbeanServer.registerMBean(new InstrumentationManager(instrumentation), instrumentationManagerObject)
   }
 }

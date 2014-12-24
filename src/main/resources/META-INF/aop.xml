@@ -1,6 +1,0 @@
-<!-- aop.xml -->
-<aspectj>
-    <aspects>
-        <aspect name="org.leaker.LeakerAspect"/>
-    </aspects>
-</aspectj>
