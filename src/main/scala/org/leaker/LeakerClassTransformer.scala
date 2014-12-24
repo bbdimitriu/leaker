@@ -2,43 +2,45 @@ package org.leaker
 
 import java.lang.instrument.ClassFileTransformer
 import java.security.ProtectionDomain
-import javassist.{CtNewMethod, ClassPool}
+import javassist.{CtMethod, CtClass, ClassPool}
 
 import org.slf4j.LoggerFactory
-
-import scala.collection.immutable.Iterable
 
 class LeakerClassTransformer(className: String, classLoader: ClassLoader) extends ClassFileTransformer {
 
   private val log = LoggerFactory.getLogger(classOf[LeakerClassTransformer])
 
   private def createInstrumentedClass(className: String,
-                                      methodsToInstrumentForClass: Map[String, MethodInstrumentation]): Array[Byte] = {
+                                      methodsToInstrumentForClass: Set[String]): Array[Byte] = {
     val cp = ClassPool.getDefault
     val ctClass = cp.get(className)
-    for (methodEntry <- methodsToInstrumentForClass) {
-      val method: String = methodEntry._1
-      val methodInstrumentation = methodEntry._2
-      log.debug(s"Instrumenting method '$method' in class $className")
-      val ctMethodOpt = Option(ctClass.getDeclaredMethod(method))
-      ctMethodOpt.foreach { ctMethod =>
-        ctClass.removeMethod(ctMethod)
-        val leakCall =
-          s"""org.leaker.MethodInstrumentationManager.leakMethodCall("$className", "$method", $$args);"""
-        ctMethod.insertBefore(leakCall)
-        ctClass.addMethod(ctMethod)
+    val classDeclaredMethodsSignatureMap = getDeclaredMethodsSignatureMap(ctClass)
+    for (fullMethodName <- methodsToInstrumentForClass) {
+      classDeclaredMethodsSignatureMap.get(fullMethodName) match {
+        case Some(ctMethod) =>
+          log.debug(s"Instrumenting method '$fullMethodName' in class $className")
+          //ctClass.removeMethod(ctMethod)
+          val leakCall =
+            s"""org.leaker.MethodInstrumentationManager.leakMethodCall("$className", "$fullMethodName", $$args);"""
+          ctMethod.insertBefore(leakCall)
+          //ctClass.addMethod(ctMethod)
+        case None =>
+          log.warn(s"Requested instrumentation of non existing method with signature $fullMethodName")
       }
     }
     ctClass.toBytecode
   }
 
+  private def getDeclaredMethodsSignatureMap(ctClass: CtClass): Map[String, CtMethod] =
+    ctClass.getDeclaredMethods.map(ctMethod => ctMethod.getLongName -> ctMethod).toMap
+
   override def transform(loader: ClassLoader, className: String, classBeingRedefined: Class[_],
                          protectionDomain: ProtectionDomain, classfileBuffer: Array[Byte]): Array[Byte] = {
     try {
-      val methodsToInstrumentForClass: Map[String, MethodInstrumentation] =
-        MethodInstrumentationManager.getMethodInstrumentationsForClassName(className)
+      val methodsToInstrumentForClass: Set[String] =
+        MethodInstrumentationManager.getMethodInstrumentationsForClassName(className).keySet
 
-      if (methodsToInstrumentForClass.size > 0 /*&& loader.equals(classLoader)*/) {
+      if (methodsToInstrumentForClass.size > 0 /*&& loader.equals(classLoader)*/ ) {
         log.info(s"Transforming class $className")
         createInstrumentedClass(className, methodsToInstrumentForClass)
       } else {

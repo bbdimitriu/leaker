@@ -20,11 +20,7 @@ object MethodInstrumentationManager {
   }
 
   def getMethodInstrumentationsForClassName(className: String): Map[String, MethodInstrumentation] =
-    // FIXME make it work with different signatures for the same method name
-    methodInstrumentationMap.filter(_._1.startsWith(className)).map { entry =>
-      val signature = entry._1
-      signature.drop(signature.lastIndexOf('.') + 1).takeWhile(_ != '(') -> entry._2
-    }.toMap
+    methodInstrumentationMap.filter(_._1.startsWith(className)).toMap
 
   private def createObservable(methodInstrumentationDetails: MethodInstrumentationDetails): Subject[Array[AnyRef]] = {
     val subject: Subject[Array[AnyRef]] = Subject[Array[AnyRef]]()
