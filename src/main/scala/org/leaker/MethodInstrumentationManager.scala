@@ -7,16 +7,14 @@ import scala.collection.concurrent.TrieMap
 
 object MethodInstrumentationManager {
 
-  val log = LoggerFactory.getLogger(MethodInstrumentationManager.getClass)
+  val log = LoggerFactory.getLogger(getClass)
 
   val methodInstrumentationMap = new TrieMap[String, MethodInstrumentation]
 
-  def makeInstrumentationForXML(xmlInstrumentationDefinition: String) {
-    val definition = MethodInstrumentationDetails.createInstanceFromXML(xmlInstrumentationDefinition)
-    val subject: Subject[Array[AnyRef]] = createObservable(definition)
-
-    methodInstrumentationMap.putIfAbsent(definition.methodSignature,
-      new MethodInstrumentation(definition, subject))
+  def makeInstrumentationForXML(instrumentationDefinition: MethodInstrumentationDetails) {
+    val subject: Subject[Array[AnyRef]] = createObservable(instrumentationDefinition)
+    methodInstrumentationMap.putIfAbsent(instrumentationDefinition.methodSignature,
+      new MethodInstrumentation(instrumentationDefinition, subject))
   }
 
   def getMethodInstrumentationsForClassName(className: String): Map[String, MethodInstrumentation] =
@@ -51,8 +49,17 @@ object MethodInstrumentationManager {
     // TODO need to call retransform
   }
 
-  def leakMethodCall(className: String, methodName: String, params: Array[AnyRef]): Unit = {
-    log.info(s"Leaked call: $className.$methodName with parameters: ${params.mkString(", ")}")
+  /**
+   * This method is called from the instrumented methods "leaking" the parameters
+   *
+   * @param methodName the full method name (including the full class name)
+   * @param params the parameters that the instrumented method was called with
+   */
+  def leakMethodCall(methodName: String, params: Array[AnyRef]): Unit = {
+    log.debug(s"Leaked call: $methodName with parameters: ${params.mkString(", ")}")
+    for (methodInstrumentation <- methodInstrumentationMap.get(methodName)) {
+      methodInstrumentation.observable.onNext(params)
+    }
   }
 
 }

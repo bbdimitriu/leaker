@@ -1,8 +1,5 @@
 package org.leaker.jmx
 
-/**
- * Created by bogdan on 24/07/2014.
- */
 trait InstrumentationManagerMBean {
 
   def makeInstrumentationForXML(xmlInstrumentationDefinition: String)

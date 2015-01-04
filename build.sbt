@@ -12,11 +12,13 @@ libraryDependencies += "org.scala-lang.modules" % "scala-xml_2.11" % "1.0.2"
 
 libraryDependencies += "org.javassist" % "javassist" % "3.18.2-GA"
 
-libraryDependencies += "com.netflix.rxjava" % "rxjava-scala" % "0.19.6"
+libraryDependencies += "com.netflix.rxjava" % "rxjava-scala" % "0.20.7"
 
-libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.0" % "test"
+libraryDependencies += "org.scalatest" % "scalatest_2.11" % "2.2.3" % "test"
 
 libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.2"
+
+libraryDependencies += "commons-io" % "commons-io" % "2.4"
 
 packageOptions in (Compile, packageBin) +=
   Package.ManifestAttributes( "Agent-Class" -> "org.leaker.LeakerAgent", "Can-Redefine-Classes" -> "true",

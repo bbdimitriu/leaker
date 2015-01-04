@@ -1,20 +1,19 @@
 package org.leaker
 
 import java.util.concurrent.atomic.AtomicInteger
-import javassist.{CtNewMethod, ClassPool}
+import javassist.{LoaderClassPath, CtNewMethod, ClassPool}
 
 import rx.functions.{Action1, Func1}
 
-/**
- * Created by bogdan on 22/07/2014.
- */
 object StringToFunctionCreator {
 
   val transformerClassNameIndex = new AtomicInteger(0)
   val methodCallFilterClassNameIndex = new AtomicInteger(0)
   val instrumentActionClassNameIndex = new AtomicInteger(0)
 
-  val pool = ClassPool.getDefault
+  val pool = new ClassPool(false)
+  pool.appendClassPath(new LoaderClassPath(getClass.getClassLoader))
+  pool.appendSystemPath()
 
   def createFilterFunction(filterString: String): Option[MethodCallFilter] = {
     if (filterString.isEmpty)
@@ -32,7 +31,7 @@ object StringToFunctionCreator {
            |}""".stripMargin
       val filterMethod = CtNewMethod.make(fullFilterMethodString, filterClass)
       filterClass.addMethod(filterMethod)
-      val filterInstance = filterClass.toClass.newInstance()
+      val filterInstance = filterClass.toClass(getClass.getClassLoader, getClass.getProtectionDomain).newInstance()
       Some(filterInstance.asInstanceOf[Func1[Array[AnyRef], Boolean]])
     }
   }
@@ -52,7 +51,7 @@ object StringToFunctionCreator {
            |}""".stripMargin
       val transformerMethod = CtNewMethod.make(fullTransformerMethodString, transformerClass)
       transformerClass.addMethod(transformerMethod)
-      val transformerInstance = transformerClass.toClass.newInstance()
+      val transformerInstance = transformerClass.toClass(getClass.getClassLoader, getClass.getProtectionDomain).newInstance()
       Some(transformerInstance.asInstanceOf[Func1[Array[AnyRef], AnyRef]])
     }
   }
@@ -71,7 +70,7 @@ object StringToFunctionCreator {
            |}""".stripMargin
       val actionMethod = CtNewMethod.make(fullActionMethodString, actionClass)
       actionClass.addMethod(actionMethod)
-      val actionInstance = actionClass.toClass.newInstance()
+      val actionInstance = actionClass.toClass(getClass.getClassLoader, getClass.getProtectionDomain).newInstance()
       Some(actionInstance.asInstanceOf[Action1[AnyRef]])
     }
   }
